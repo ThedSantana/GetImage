@@ -73,10 +73,11 @@ public class MainActivity extends AppCompatActivity {
     private void takePictureNewSchool() {
         File path = new File(this.getFilesDir(), "images/recipe/");
         if (!path.exists()) path.mkdirs();
-        File image = new File(path, "image.jpg");
-        Uri imageUri = FileProvider.getUriForFile(this, CAPTURE_IMAGE_FILE_PROVIDER, image);
+        long millis = System.currentTimeMillis();
+        File image = new File(path, String.valueOf(millis) + ".jpg");
+        outputFileUri = FileProvider.getUriForFile(this, CAPTURE_IMAGE_FILE_PROVIDER, image);
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
         startActivityForResult(intent, IMAGE_REQUEST_NEW_SCHOOL_CODE);
     }
 
@@ -112,8 +113,8 @@ public class MainActivity extends AppCompatActivity {
             Timber.e("Cannot image file, directory was null, returns null");
             return null;
         }
-        long unixTime = System.currentTimeMillis();
-        String path = directory + "/" + String.valueOf(unixTime) + ".jpg";
+        long millis = System.currentTimeMillis();
+        String path = directory + "/" + String.valueOf(millis) + ".jpg";
         Timber.d("Trying create file " + path);
         File file = new File(path);
         try {
@@ -145,15 +146,15 @@ public class MainActivity extends AppCompatActivity {
         Timber.d("onActivityResult requestCode " + requestCode + ", resultCode " + resultCode);
 
         if (requestCode == TAKE_PHOTO_OLD_STYLE_CODE && resultCode == RESULT_OK) {
-            displayImageOldSchoolStyle(outputFileUri);
+            displayImage(outputFileUri);
         }
 
-        if (requestCode == IMAGE_REQUEST_NEW_SCHOOL_CODE) {
-            Timber.d((null != data) ? data.toString() : "null");
+        else if (requestCode == IMAGE_REQUEST_NEW_SCHOOL_CODE) {
+            displayImage(outputFileUri);
         }
     }
 
-    private void displayImageOldSchoolStyle(Uri result) {
+    private void displayImage(Uri result) {
 
         Bitmap bitmap = getPictureTaken(result);
 
