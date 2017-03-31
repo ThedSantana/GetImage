@@ -38,26 +38,52 @@ public class MainActivity extends AppCompatActivity {
 
     private void takePictureOldSchool() {
         Timber.d("Taking picture old school style");
-        // Here, we are making a folder named picFolder to store
-        // pics taken by the camera using this application.
-        final String dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/picFolder/";
-        File pictureDirectory = new File(dir);
-        pictureDirectory.mkdirs();
 
-        // Here, the counter will be incremented each time, and the
-        // picture taken by camera will be stored as 1.jpg,2.jpg
-        // and likewise.
+        File dir = createDirectory();
+
+        File outputFile = createFileInDirectory(dir);
+
+        if (null != outputFile) {
+            startCameraEvent(outputFile);
+        }
+    }
+
+    private File createDirectory() {
+        Timber.d("Creating image directory");
+        File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/myRecipePictures/");
+        if (directory.mkdirs()) {
+            return directory;
+        } else {
+            Timber.e("Cannot create image directory, returns null");
+            return null;
+        }
+    }
+
+    private File createFileInDirectory(File directory) {
+        if (null == directory) {
+            Timber.e("Cannot image file, directory was null, returns null");
+            return null;
+        }
         count++;
-        String file = dir + count + ".jpg";
-        File newFile = new File(file);
+        String path = directory + "recipeImage" + count + ".jpg";
+        Timber.d("Trying create file " + path);
+        File file = new File(path);
         try {
-            newFile.createNewFile();
+            if (file.createNewFile()) {
+                return file;
+            } else {
+                Timber.d("Cannot create file " + path + "returns null");
+                return null;
+            }
+        } catch (IOException e) {
+            Timber.e(e, "Cannot create file " + path + ", returns null");
+            return null;
         }
-        catch (IOException e) {
-            Timber.e(e, "Cannot create file for picture");
-        }
+    }
 
-        outputFileUri = Uri.fromFile(newFile);
+    private void startCameraEvent(File outputFile) {
+        Timber.d("Starting Camera for result");
+        outputFileUri = Uri.fromFile(outputFile);
 
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
@@ -76,15 +102,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void displayImageOldSchoolStyle(Uri result) {
-        Timber.d("Fetch and display image old school style");
 
-        Bitmap mBitmap = null;
-        try {
-            mBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), result);
-        } catch (IOException e) {
-            e.printStackTrace();
+        Bitmap bitmap = getPictureTaken(result);
+
+        if (null != bitmap) {
+            ImageView view = (ImageView) findViewById(R.id.imageView);
+            view.setImageBitmap(bitmap);
+            Timber.d("Displaying picture " + result + " as " + bitmap);
         }
-        ImageView view = (ImageView) findViewById(R.id.imageView);
-        view.setImageBitmap(mBitmap);
+    }
+
+    private Bitmap getPictureTaken(Uri result) {
+        Timber.d("Trying to load picture from " + result);
+        try {
+            return MediaStore.Images.Media.getBitmap(this.getContentResolver(), result);
+        } catch (IOException e) {
+            Timber.e(e, "Cannot load picture " + result + ", returns null");
+            return null;
+        }
     }
 }
