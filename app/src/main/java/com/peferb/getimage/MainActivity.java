@@ -71,14 +71,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void takePictureNewSchool() {
-        File path = new File(this.getFilesDir(), "images/recipe/");
-        if (!path.exists()) path.mkdirs();
-        long millis = System.currentTimeMillis();
-        File image = new File(path, String.valueOf(millis) + ".jpg");
-        outputFileUri = FileProvider.getUriForFile(this, CAPTURE_IMAGE_FILE_PROVIDER, image);
+        File outputFile = createOutputFile();
+        startCameraEventNewStyle(outputFile);
+    }
+
+    private void startCameraEventNewStyle(File outputFile) {
+        outputFileUri = FileProvider.getUriForFile(this, CAPTURE_IMAGE_FILE_PROVIDER, outputFile);
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
         startActivityForResult(intent, IMAGE_REQUEST_NEW_SCHOOL_CODE);
+    }
+
+    private File createOutputFile() {
+        File path = new File(this.getFilesDir(), "images/recipe/");
+        if (!path.exists()) path.mkdirs();
+        long millis = System.currentTimeMillis();
+        return new File(path, String.valueOf(millis) + ".jpg");
     }
 
     private void takePictureOldSchool() {
