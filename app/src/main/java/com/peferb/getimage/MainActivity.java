@@ -26,7 +26,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int MY_REQUEST_CODE = 64564161;
     private final int TAKE_PHOTO_OLD_STYLE_CODE = 0;
     private static final int IMAGE_REQUEST_NEW_SCHOOL_CODE = 1;
-    private static int count = 0;
     private Uri outputFileUri;
     private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.peferb.getimage.provider";
 
@@ -42,19 +41,18 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.button_take_picture)
     public void takePicture(View view) {
         Timber.d("button_take_picture clicked");
-//        takePictureOldSchool();
-        takePictureNewSchool();
-    }
 
-    private void takePictureNewSchool() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Timber.d("Android M and later must ask/check for permission to access camera");
             if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 Timber.d("Asking for camera permission");
                 requestPermissions(new String[]{Manifest.permission.CAMERA}, MY_REQUEST_CODE);
             } else {
-                pictureTakingGrantedGoGoGo();
+                Timber.d("Already had camera permission");
+                takePictureNewSchool();
             }
         } else {
+            Timber.d("Android < M do not need to ask for permission and handles files a bit different");
             takePictureOldSchool();
         }
     }
@@ -66,13 +64,13 @@ public class MainActivity extends AppCompatActivity {
             case MY_REQUEST_CODE: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    pictureTakingGrantedGoGoGo();
+                    takePictureNewSchool();
                 }
             }
         }
     }
 
-    private void pictureTakingGrantedGoGoGo() {
+    private void takePictureNewSchool() {
         File path = new File(this.getFilesDir(), "images/recipe/");
         if (!path.exists()) path.mkdirs();
         File image = new File(path, "image.jpg");
@@ -96,15 +94,17 @@ public class MainActivity extends AppCompatActivity {
 
     private File createDirectory() {
         Timber.d("Creating image directory");
-        File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/myRecipePictures/");
-//        if (directory.mkdirs()) {
-//            return directory;
-//        } else {
-//            Timber.e("Cannot create image directory, returns null");
-//            return null;
-//        }
-        directory.mkdirs();
-        return directory;
+
+        File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/My_Recipes/");
+
+        if (directory.exists()) return directory;
+
+        if (directory.mkdirs()) {
+            return directory;
+        } else {
+            Timber.e("Cannot create image directory, returns null");
+            return null;
+        }
     }
 
     private File createFileInDirectory(File directory) {
@@ -112,15 +112,15 @@ public class MainActivity extends AppCompatActivity {
             Timber.e("Cannot image file, directory was null, returns null");
             return null;
         }
-        count++;
-        String path = directory + "recipeImage" + count + ".jpg";
+        long unixTime = System.currentTimeMillis();
+        String path = directory + "/" + String.valueOf(unixTime) + ".jpg";
         Timber.d("Trying create file " + path);
         File file = new File(path);
         try {
             if (file.createNewFile()) {
                 return file;
             } else {
-                Timber.d("Cannot create file " + path + "returns null");
+                Timber.d("Cannot create file " + path + ", returns null");
                 return null;
             }
         } catch (IOException e) {
